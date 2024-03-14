@@ -14,18 +14,12 @@ interface FileData {
 }
 
 const formatFileName = (fileName: string) => {
-  const words = fileName.split(' ');
-  if (words.length > 2) {
-    const truncatedName = words.slice(0, 2).join(' ');
-    const remainingWords = words.slice(2).join(' ');
-    return (
-      <>
-        <span>{truncatedName}</span>
-        <br />
-        <span>{remainingWords}</span>
-      </>
-    );
+  const MAX_LENGTH = 20; 
+  
+  if (fileName.length > MAX_LENGTH) {
+    return fileName.slice(0, MAX_LENGTH - 3) + '...';
   }
+  
   return fileName;
 };
 
@@ -38,17 +32,14 @@ const FileUploader = () => {
     const fetchUserFiles = async () => {
       if (!session?.user?.email) return;
       const email = session.user.email;
-      console.log('Fetching user files for email:', email); // Debugging
       const userFilesRef = collection(db, `files/${email}/metadata`); 
-      console.log('User files reference:', userFilesRef); // Debugging
+  
       const querySnapshot = await getDocs(userFilesRef);
-      console.log('Query snapshot:', querySnapshot); // Debugging
 
       const filesUrls = querySnapshot.docs.map((doc) => {
         const data = doc.data();
         return { name: data.name, url: data.url };
       });
-      console.log('User files:', filesUrls); // Debugging
       setUserFiles(filesUrls);
     };
 
@@ -73,7 +64,7 @@ const FileUploader = () => {
                   <a href={file.url} target="_blank" rel="noopener noreferrer">
                     <FontAwesomeIcon icon={faFile} size="3x" />
                   </a>
-                  <span className="mt-1 text-center overflow-hidden whitespace-normal break-words">
+                  <span className={'mt-1 text-center'} title={file.name}>
                     {formatFileName(file.name)}
                   </span>
                 </li>
