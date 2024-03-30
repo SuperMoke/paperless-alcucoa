@@ -8,7 +8,7 @@ import React from 'react'
 
 
 
-export default function navbar() {
+export default function NavbarComponent() {
   const { data: session } = useSession();
   const email = session?.user?.email;
   return (
