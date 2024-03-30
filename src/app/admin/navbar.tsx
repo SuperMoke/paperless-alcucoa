@@ -5,10 +5,7 @@ import { Typography } from '@material-tailwind/react/components/Typography'
 import { signOut, useSession } from 'next-auth/react'
 import React from 'react'
 
-
-
-
-export default function navbar() {
+export default function NavbarComponent() {
   const { data: session } = useSession();
   const email = session?.user?.email;
   return (
