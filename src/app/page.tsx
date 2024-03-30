@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 export default function Home() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const userEmail  = session?.user?.email;
 
   React.useEffect(() => {
     if (status === 'loading') return; 
@@ -13,7 +14,13 @@ export default function Home() {
     if (!session) {
       router.push('/signin');
     } else {
-      router.push('/alcucoa-repo'); 
+      if(userEmail){
+        if(userEmail.includes("user")){
+          router.push('/user');
+        } else {
+          router.push('/admin');
+        }
+      } 
     }
   }, [session, status]);
 

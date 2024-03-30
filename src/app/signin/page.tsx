@@ -22,12 +22,16 @@ export default function Signin(){
             email,
             password,
             redirect: false,
-            callbackUrl: '/alcucoa-repo',
+            callbackUrl: '/',
         });
         if(result?.error){
             setError('Sorry, Wrong Email or Password!')
         }else {
-            router.push('/')
+            if(email.includes('user')){
+                router.push('/user');
+            }else{
+                router.push('/admin');
+            }
         }
 
     }

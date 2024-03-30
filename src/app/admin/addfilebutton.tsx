@@ -1,16 +1,17 @@
 'use client'
 import { useState, useEffect } from 'react';
-import { ref, uploadBytesResumable, getDownloadURL, listAll, getMetadata } from 'firebase/storage';
-import { db, storage } from '@/app/firebase'; 
-import { Button } from '@material-tailwind/react/components/Button';
-import { useSession } from 'next-auth/react';
+import { collection, getDocs, onSnapshot } from 'firebase/firestore';
+import { db } from '@/app/firebase'; 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFile } from '@fortawesome/free-regular-svg-icons';
-import { collection, getDocs, onSnapshot } from 'firebase/firestore';
 
 interface FileData {
   name: string;
   url: string;
+}
+
+interface FileUploaderProps {
+  currentFolder: string; // Add currentFolder prop
 }
 
 const formatFileName = (fileName: string) => {
@@ -23,34 +24,32 @@ const formatFileName = (fileName: string) => {
   return fileName;
 };
 
-
-const FileUploader = () => {
+const FileUploader: React.FC<FileUploaderProps> = ({ currentFolder }) => {
   const [userFiles, setUserFiles] = useState<FileData[]>([]);
-  const { data: session } = useSession();
 
   useEffect(() => {
     const fetchUserFiles = async () => {
-      if (!session?.user?.email) return;
-      const email = session.user.email;
-      const userFilesRef = collection(db, `files/${email}/metadata`); 
-  
-      const querySnapshot = await getDocs(userFilesRef);
-
-      const filesUrls = querySnapshot.docs.map((doc) => {
-        const data = doc.data();
-        return { name: data.name, url: data.url };
-      });
-      setUserFiles(filesUrls);
+      try {
+        const userFilesRef = collection(db, `users/folders/${currentFolder}/files/metadata`); 
+        const querySnapshot = await getDocs(userFilesRef);
+        const filesUrls = querySnapshot.docs.map((doc) => {
+          const data = doc.data();
+          return { name: data.name, url: data.url };
+        });
+        setUserFiles(filesUrls);
+      } catch (error) {
+        console.error('Error fetching user files:', error);
+      }
     };
 
-    fetchUserFiles();
-
-    const unsubscribe = onSnapshot(collection(db, `files/${session?.user?.email}/metadata`), () => {
+    const unsubscribe = onSnapshot(collection(db, `users/folders/${currentFolder}/files/metadata`), () => {
       fetchUserFiles(); 
     });
 
+    fetchUserFiles(); // Fetch data initially
+
     return () => unsubscribe();
-  }, [session]);
+  }, [currentFolder]);
   
   return (
     <div>

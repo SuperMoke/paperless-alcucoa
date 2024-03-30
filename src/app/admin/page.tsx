@@ -7,9 +7,12 @@ import { db, storage } from '@/app/firebase';
 import { ref, uploadBytesResumable, getDownloadURL, listAll, getMetadata } from 'firebase/storage';
 import { signOut, useSession} from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { addDoc, collection, doc, onSnapshot, serverTimestamp } from 'firebase/firestore';
+import { addDoc, collection, doc, getDocs, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import Alert from '@material-tailwind/react/components/Alert';
 import { Progress } from '@material-tailwind/react';
+import { Input } from '@material-tailwind/react/components/Input';
+import FolderUploader from './addfolderbutton';
+
 
 interface FileData {
   name: string;
@@ -26,6 +29,9 @@ export default function Dashboard() {
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
   const [userFiles, setUserFiles] = useState<FileData[]>([]);
   const [error, setError] = useState('');
+  const [folderName, setFolderName] = useState<string>('');
+  const [currentFolder, setCurrentFolder] = useState<string>('Root');
+  const [showFolderUploader, setShowFolderUploader] = useState<boolean>(true);
 
   React.useEffect(() => {
     if (status === 'loading') return; 
@@ -33,6 +39,7 @@ export default function Dashboard() {
     if (!session) {
       router.push('/signin'); 
     }
+
   }, [session, status, router]);
 
   
@@ -98,8 +105,51 @@ export default function Dashboard() {
     );
   };
 
+  const handleFolderCreate = async () => {
+    if (!folderName || !session?.user?.email) return;
+    try {
+      const email = session.user.email;
+    const folderRef = collection(db, `users/${email}/folders`);
+    
+    // Fetch existing folders
+    const querySnapshot = await getDocs(folderRef);
+    
+    // Find the highest ID
+    let maxId = 0;
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      if (data.id > maxId) {
+        maxId = data.id;
+      }
+    });
+    const newFolderId = maxId + 1;
+
+    await addDoc(folderRef, {
+      id: newFolderId,
+      name: folderName,
+      createdAt: new Date(),
+    });
+
+    setFolderName('');
+    } catch (error) {
+      console.error('Error creating folder:', error);
+    }
+  };
+
+  const hideFolderUploader = () => {
+    setShowFolderUploader(false);
+  };
+
   return (
     <div className="flex flex-col h-screen">
+      {uploading && (
+          <Progress
+            value={progress}
+            color="green"
+            placeholder={undefined}          
+          />
+    )}
+    <div className='mt-2'></div>
   <Navbar />
   <div className="flex  flex-col justify-center lg:px-8 mx-auto max-w-screen-xl px-6 py-3">
     <h2 className="text-2xl font-bold leading-9 tracking-tight text-black text-center">
@@ -124,23 +174,58 @@ export default function Dashboard() {
         </>
       )}
     </div>
-    <Button placeholder={undefined} className='flex justify-center mt-5 bg-green-900'>
-      <input type="file" onChange={handleFileChange} />
-    </Button>
-    <Button placeholder={undefined} className='flex justify-center mt-2 bg-green-900 ' onClick={handleUpload} disabled={!file || uploading}>
-      Upload File
-    </Button>
-    {uploading && (
-          <Progress
-            value={progress}
-            color="green"
-            className="mt-2"
-            placeholder={undefined}          
+    <div className='flex flex-col'>
+    <div className='relative flex w-full max-w-[24rem]'>
+      <Input
+          type="file"
+          size='md'
+          onChange={handleFileChange}
+          className="pr-20 pt-2"
+          containerProps={{
+            className: "min-w-0",
+          }}
+          placeholder={undefined}
+          crossOrigin={undefined}
+        />
+        <Button
+          size="sm"
+          disabled={!file || uploading}
+          color={file ? "green" : "green"}
+          className="!absolute right-1 top-1 rounded bg-green-900"
+          placeholder={undefined}
+          onClick={handleUpload}
+        >
+          Submit
+        </Button>
+        </div>
+        <div className='mt-5 flex flex-row w-full max-w-[24rem]'>
+          
+        </div>
+        <Input
+            type="text"
+            size='lg'
+            value={folderName}
+            onChange={(e) => setFolderName(e.target.value)}
+            placeholder="Enter folder name"
+            className="pr-20 pt-2"
+            containerProps={{
+              className: "min-w-0",
+            }}
+            crossOrigin={undefined}
           />
-    )}
-    {uploading && <p className='text-blue-gray-900 text-center'>Uploading... {progress.toFixed(0)}%</p>}
+          <Button
+            size="sm"
+            color="green"
+            className="mt-5 rounded bg-green-900"
+            onClick={handleFolderCreate}
+            placeholder={undefined}
+          >
+            Create Folder
+          </Button>
+    </div>
   </div>
-  <FileUploader/>
+  <FileUploader currentFolder={currentFolder} />
+  {showFolderUploader && <FolderUploader currentFolder={currentFolder} setCurrentFolder={setCurrentFolder} setfolderName={folderName} hideFolderUploader={hideFolderUploader} />}
 </div>
   );
 }
