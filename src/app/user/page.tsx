@@ -141,11 +141,8 @@ export default function Dashboard() {
     } catch (error) {
       setError("");
     }
-
     const uploadTask = uploadBytesResumable(storageRef, file);
-
     setUploading(true);
-
     uploadTask.on(
       "state_changed",
       (snapshot) => {

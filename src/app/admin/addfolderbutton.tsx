@@ -1,11 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { collection, getDocs, onSnapshot, orderBy, query } from 'firebase/firestore';
-import { db } from '@/app/firebase'; 
-import { Button } from '@material-tailwind/react/components/Button';
-import { useSession } from 'next-auth/react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFolder } from '@fortawesome/free-solid-svg-icons/faFolder';
-import { useRouter } from "next/navigation"
+import React, { useState, useEffect } from "react";
+import {
+  collection,
+  getDocs,
+  onSnapshot,
+  orderBy,
+  query,
+} from "firebase/firestore";
+import { db } from "@/app/firebase";
+import { Button } from "@material-tailwind/react/components/Button";
+import { useSession } from "next-auth/react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faFolder } from "@fortawesome/free-solid-svg-icons/faFolder";
+import { useRouter } from "next/navigation";
 
 interface FolderData {
   id: any;
@@ -13,18 +19,21 @@ interface FolderData {
 }
 
 interface FolderUploaderProps {
-    currentFolder: string;
-    setCurrentFolder: React.Dispatch<React.SetStateAction<string>>;
-    setfolderName: string;
-    hideFolderUploader: () => void; // New prop to hide the FolderUploader
+  currentFolder: string;
+  setCurrentFolder: React.Dispatch<React.SetStateAction<string>>;
+  setfolderName: string;
+  hideFolderUploader: () => void; // New prop to hide the FolderUploader
+}
 
-  }
-
-const FolderUploader: React.FC<FolderUploaderProps> = ({ currentFolder, setCurrentFolder, setfolderName,hideFolderUploader }) => {
+const FolderUploader: React.FC<FolderUploaderProps> = ({
+  currentFolder,
+  setCurrentFolder,
+  setfolderName,
+  hideFolderUploader,
+}) => {
   const [userFolders, setUserFolders] = useState<FolderData[]>([]);
   const { data: session } = useSession();
   const router = useRouter();
-
 
   const handleFolderClick = (folderName: string) => {
     setCurrentFolder(folderName);
@@ -36,11 +45,13 @@ const FolderUploader: React.FC<FolderUploaderProps> = ({ currentFolder, setCurre
       if (!session?.user?.email) return;
       const email = session.user.email;
       const userFoldersRef = collection(db, `users/${email}/folders`);
-      const querySnapshot = await getDocs(query(userFoldersRef,orderBy('name', 'asc')));
-      const fetchedFolders = querySnapshot.docs.map(doc => ({
+      const querySnapshot = await getDocs(
+        query(userFoldersRef, orderBy("name", "asc"))
+      );
+      const fetchedFolders = querySnapshot.docs.map((doc) => ({
         id: doc.id,
         name: doc.data().name,
-    }));
+      }));
       console.log(fetchedFolders);
       setUserFolders(fetchedFolders);
     };

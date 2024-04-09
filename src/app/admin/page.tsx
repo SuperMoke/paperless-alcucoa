@@ -1,21 +1,33 @@
-'use client'
-import React, { useState, useEffect } from 'react';
-import Navbar from './navbar';
-import FileUploader from './addfilebutton';
-import Button from '@material-tailwind/react/components/Button';
-import { db, storage } from '@/app/firebase';
-import { ref, uploadBytesResumable, getDownloadURL, getMetadata } from 'firebase/storage';
-import { signOut, useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-import { addDoc, collection, getDocs, onSnapshot, query, serverTimestamp } from 'firebase/firestore';
-import Alert from '@material-tailwind/react/components/Alert';
-import { Progress } from '@material-tailwind/react';
-import { Input } from '@material-tailwind/react/components/Input';
-import FolderUploader from './addfolderbutton';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFile } from '@fortawesome/free-regular-svg-icons';
-import Select from '@material-tailwind/react/components/Select';
-import { Option } from '@material-tailwind/react/components/Select';
+"use client";
+import React, { useState, useEffect } from "react";
+import Navbar from "./navbar";
+import FileUploader from "./addfilebutton";
+import Button from "@material-tailwind/react/components/Button";
+import { db, storage } from "@/app/firebase";
+import {
+  ref,
+  uploadBytesResumable,
+  getDownloadURL,
+  getMetadata,
+} from "firebase/storage";
+import { signOut, useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import {
+  addDoc,
+  collection,
+  getDocs,
+  onSnapshot,
+  query,
+  serverTimestamp,
+} from "firebase/firestore";
+import Alert from "@material-tailwind/react/components/Alert";
+import { Progress } from "@material-tailwind/react";
+import { Input } from "@material-tailwind/react/components/Input";
+import FolderUploader from "./addfolderbutton";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faFile } from "@fortawesome/free-regular-svg-icons";
+import Select from "@material-tailwind/react/components/Select";
+import { Option } from "@material-tailwind/react/components/Select";
 
 interface FileData {
   name: string;
@@ -29,19 +41,19 @@ export default function Dashboard() {
   const [uploading, setUploading] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(0);
   const [userFiles, setUserFiles] = useState<FileData[]>([]);
-  const [error, setError] = useState('');
-  const [folderName, setFolderName] = useState<string>('');
-  const [currentFolder, setCurrentFolder] = useState<string>('Root');
+  const [error, setError] = useState("");
+  const [folderName, setFolderName] = useState<string>("");
+  const [currentFolder, setCurrentFolder] = useState<string>("Root");
   const [showFolderUploader, setShowFolderUploader] = useState<boolean>(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<FileData[]>([]);
-  const [selectedFolder, setSelectedFolder] = useState<string>('Diploma');
+  const [selectedFolder, setSelectedFolder] = useState<string>("Diploma");
 
   useEffect(() => {
-    if (status === 'loading') return;
+    if (status === "loading") return;
 
     if (!session) {
-      router.push('/signin');
+      router.push("/signin");
     }
   }, [session, status, router]);
 
@@ -49,22 +61,28 @@ export default function Dashboard() {
     const MAX_LENGTH = 20;
 
     if (fileName.length > MAX_LENGTH) {
-      return fileName.slice(0, MAX_LENGTH - 3) + '...';
+      return fileName.slice(0, MAX_LENGTH - 3) + "...";
     }
 
     return fileName;
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const allowedTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/msword'];
+    const allowedTypes = [
+      "application/pdf",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/msword",
+    ];
     const selectedFile = event.target.files && event.target.files[0];
 
     if (selectedFile) {
       if (!allowedTypes.includes(selectedFile.type)) {
-        setError('Unsupported file type. Please select a PDF, DOC, or DOCX file.');
+        setError(
+          "Unsupported file type. Please select a PDF, DOC, or DOCX file."
+        );
       } else {
         setFile(selectedFile);
-        setError('');
+        setError("");
       }
     }
   };
@@ -79,7 +97,7 @@ export default function Dashboard() {
       setError(`File already exists.`);
       return;
     } catch (error) {
-      setError('');
+      setError("");
     }
 
     const uploadTask = uploadBytesResumable(storageRef, file);
@@ -87,9 +105,10 @@ export default function Dashboard() {
     setUploading(true);
 
     uploadTask.on(
-      'state_changed',
+      "state_changed",
       (snapshot) => {
-        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        const progress =
+          (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
         progress.toFixed(0);
         setProgress(progress);
       },
@@ -105,9 +124,9 @@ export default function Dashboard() {
           await addDoc(collection(db, `files/${email}/metadata`), {
             name: file.name,
             url: downloadURL,
-            timestamp: serverTimestamp()
+            timestamp: serverTimestamp(),
           });
-          console.log('File upload successful and metadata added to Firestore');
+          console.log("File upload successful and metadata added to Firestore");
         } catch (error) {
           setError(`There is an error uploading the file`);
           setUploading(false);
@@ -141,16 +160,15 @@ export default function Dashboard() {
         createdAt: new Date(),
       });
 
-      setFolderName('');
+      setFolderName("");
     } catch (error) {
-      console.error('Error creating folder:', error);
+      console.error("Error creating folder:", error);
     }
   };
 
   const hideFolderUploader = () => {
     setShowFolderUploader(false);
   };
-
 
   const folderNames = [
     "Diploma",
@@ -164,9 +182,6 @@ export default function Dashboard() {
     "Certificate of participation in community involvement",
   ];
 
-
-
-
   const handleSelectChange = (value: string | undefined) => {
     if (value) {
       setSelectedFolder(value);
@@ -176,7 +191,9 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const q = query(collection(db, `users/folders/${selectedFolder}/files/metadata`));
+        const q = query(
+          collection(db, `users/folders/${selectedFolder}/files/metadata`)
+        );
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
           const files: FileData[] = [];
           querySnapshot.forEach((doc) => {
@@ -187,30 +204,36 @@ export default function Dashboard() {
         });
         return () => unsubscribe();
       } catch (error) {
-        setError('Error fetching data');
+        setError("Error fetching data");
       }
     };
 
     fetchData();
   }, [selectedFolder]);
 
-  const filteredFiles = searchResults.filter((file) =>
-    searchQuery.trim() !== '' && file.name.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredFiles = searchResults.filter(
+    (file) =>
+      searchQuery.trim() !== "" &&
+      file.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
     <div className="flex flex-col h-screen">
-      {uploading && <Progress value={progress} color="green" placeholder={undefined} />}
+      {uploading && (
+        <Progress value={progress} color="green" placeholder={undefined} />
+      )}
       <div className="mt-2"></div>
       <Navbar />
       <div className="flex  flex-col justify-center lg:px-8 mx-auto max-w-screen-xl px-6 py-3">
-        <h2 className="text-2xl font-bold leading-9 tracking-tight text-black text-center">Content</h2>
+        <h2 className="text-2xl font-bold leading-9 tracking-tight text-black text-center">
+          Content
+        </h2>
         <div>
           {error && (
             <>
               <Alert
                 open={true}
-                onClose={() => setError('')}
+                onClose={() => setError("")}
                 animate={{
                   mount: { y: 0 },
                   unmount: { y: 200 },
@@ -249,49 +272,26 @@ export default function Dashboard() {
             </Button>
           </div>
           <div className="mt-5 flex flex-row w-full max-w-[24rem]"></div>
-          <Input
-            type="text"
-            size="lg"
-            value={folderName}
-            onChange={(e) => setFolderName(e.target.value)}
-            placeholder="Enter folder name"
-            className="pr-20 pt-2"
-            containerProps={{
-              className: "min-w-0",
-            }}
-            crossOrigin={undefined}
-          />
-          <Button
-            size="sm"
-            color="green"
-            className="mt-5 rounded bg-green-900"
-            onClick={handleFolderCreate}
-            placeholder={undefined}
-          >
-            Create Folder
-          </Button>
-          <div className="mt-5 flex flex-row w-full max-w-[24rem]"></div>
-         
 
-<Select
+          <Select
             value={selectedFolder}
             onChange={handleSelectChange}
             placeholder={undefined}
-            label="Select a folder">
-    {folderNames.map((name) => (
-                <Option key={name} value={name}>
-                  {name}
-                </Option>
-              ))}
-        
+            label="Select a folder"
+          >
+            {folderNames.map((name) => (
+              <Option key={name} value={name}>
+                {name}
+              </Option>
+            ))}
           </Select>
 
-          <div className='mt-3'></div>
+          <div className="mt-3"></div>
 
           <Input
             type="text"
             size="lg"
-            color='green'
+            color="green"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             label="Search by file name"
@@ -301,19 +301,20 @@ export default function Dashboard() {
             }}
             crossOrigin={undefined}
           />
-
         </div>
       </div>
       {filteredFiles.length > 0 && (
         <div>
-          <h2 className="text-blue-gray-900 text-center mt-2 mb-5">Search Results:</h2>
+          <h2 className="text-blue-gray-900 text-center mt-2 mb-5">
+            Search Results:
+          </h2>
           <ul className="text-blue-gray-900">
             {filteredFiles.map((file, index) => (
               <li key={index} className="mr-3 mb-3 flex flex-col items-center">
                 <a href={file.url} target="_blank" rel="noopener noreferrer">
                   <FontAwesomeIcon icon={faFile} size="3x" />
                 </a>
-                <span className={'mt-1 text-center'} title={file.name}>
+                <span className={"mt-1 text-center"} title={file.name}>
                   {file.name}
                 </span>
               </li>
@@ -322,7 +323,14 @@ export default function Dashboard() {
         </div>
       )}
       <FileUploader currentFolder={currentFolder} />
-      {showFolderUploader && <FolderUploader currentFolder={currentFolder} setCurrentFolder={setCurrentFolder} setfolderName={folderName} hideFolderUploader={hideFolderUploader} />}
+      {showFolderUploader && (
+        <FolderUploader
+          currentFolder={currentFolder}
+          setCurrentFolder={setCurrentFolder}
+          setfolderName={folderName}
+          hideFolderUploader={hideFolderUploader}
+        />
+      )}
     </div>
   );
 }
